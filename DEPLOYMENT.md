@@ -116,7 +116,13 @@ VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 2. Choose "Connect your application"
 3. Copy the connection string
 4. Replace `<password>` with your database password
-5. Add to Render environment variables as `ATLAS_URI`
+5. **Important**: Make sure the connection string includes `?retryWrites=true&w=majority` at the end
+6. Add to Render environment variables as `ATLAS_URI`
+
+**Example connection string format:**
+```
+mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+```
 
 ## Testing the Deployment
 
@@ -124,7 +130,15 @@ VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 Visit: `https://your-backend-domain.onrender.com/health`
 
-Should return: `{"status":"OK","message":"Server is running"}`
+Should return: 
+```json
+{
+  "status": "OK",
+  "message": "Server is running",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "environment": "production"
+}
+```
 
 ### Frontend Test
 
@@ -141,6 +155,16 @@ Should return: `{"status":"OK","message":"Server is running"}`
 2. **Environment Variables**: Double-check all environment variables are set correctly
 3. **Build Failures**: Check the build logs in Vercel/Render dashboard
 4. **Database Connection**: Verify MongoDB Atlas connection string and network access
+
+### SSL/TLS Errors
+
+If you encounter SSL errors like `tlsv1 alert internal error`:
+
+1. **Check MongoDB Connection String**: Ensure it includes proper SSL parameters
+2. **Network Access**: Make sure MongoDB Atlas allows connections from all IPs (0.0.0.0/0)
+3. **Connection String Format**: Use the format: `mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority`
+4. **Environment Variables**: Verify `ATLAS_URI` is set correctly in Render
+5. **SSL Configuration**: The server is configured to handle SSL properly with `sslValidate: false`
 
 ### Logs
 
@@ -160,4 +184,5 @@ If you encounter issues:
 1. Check the deployment logs
 2. Verify all environment variables are set
 3. Test the API endpoints individually
-4. Check the browser console for frontend errors 
+4. Check the browser console for frontend errors
+5. For SSL errors, verify MongoDB Atlas network access and connection string format 

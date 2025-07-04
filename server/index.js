@@ -56,12 +56,35 @@ app.use(cors({
 
 app.use(express.json());
 
+// MongoDB connection with proper SSL configuration
 const uri = process.env.ATLAS_URI;
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-const connection = mongoose.connection;
-connection.once('open', () => {
-  console.log('MongoDB database connection established successfully');
-});
+if (uri) {
+  mongoose.connect(uri, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true,
+    ssl: true,
+    sslValidate: false, // Disable SSL validation for development
+    retryWrites: true,
+    w: 'majority',
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
+  
+  const connection = mongoose.connection;
+  connection.once('open', () => {
+    console.log('MongoDB database connection established successfully');
+  });
+  
+  connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+  });
+  
+  connection.on('disconnected', () => {
+    console.log('MongoDB disconnected');
+  });
+} else {
+  console.error('MongoDB URI not provided in environment variables');
+}
 
 const pdfsRouter = require('./routes/pdf');
 const authRouter = require('./routes/auth');
@@ -74,9 +97,24 @@ app.use('/uploads', express.static('uploads'));
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Server is running' });
+  res.status(200).json({ 
+    status: 'OK', 
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
+  });
 });
 
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
