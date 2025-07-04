@@ -1,0 +1,25 @@
+image: node:18
+
+stages:
+  - build
+  - test
+  - deploy
+
+cache:
+  paths:
+    - node_modules/
+
+build_job:
+  stage: build
+  script:
+    - npm install
+
+test_job:
+  stage: test
+  script:
+    - npm test
+
+deploy_job:
+  stage: deploy
+  script:
+    - npm start

@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  server:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - ATLAS_URI=your_mongodb_connection_string
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
