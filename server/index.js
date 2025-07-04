@@ -40,7 +40,9 @@ const port = process.env.PORT || 5000;
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://your-frontend-domain.vercel.app' // Replace with your Vercel domain
+  'https://signpdf-git-master-prathamesh-pawars-projects-de2689ea.vercel.app',
+  'https://signpdf-prathamesh-pawars-projects-de2689ea.vercel.app',
+  'https://signpdf.vercel.app'
 ];
 
 app.use(cors({
@@ -48,9 +50,15 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },

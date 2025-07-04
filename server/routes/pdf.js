@@ -6,6 +6,10 @@ const fs = require('fs');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync('uploads/')) {
+      fs.mkdirSync('uploads/', { recursive: true });
+    }
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
@@ -16,18 +20,53 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+  fileFilter: (req, file, cb) => {
+    // Check if file is a PDF
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'), false);
+    }
+  }
 });
 
-router.post('/upload', upload.single('pdf'), (req, res) => {
-  const filename = req.file.filename;
-  const filepath = req.file.path;
-  const uploaderId = req.body.uploaderId; // Assuming uploaderId is sent in the request body
+router.post('/upload', upload.single('pdf'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
 
-  const newPdf = new Pdf({ filename, filepath, uploaderId });
+    const filename = req.file.filename;
+    const filepath = req.file.path;
+    const uploaderId = req.body.uploaderId || 'anonymous'; // Make uploaderId optional
 
-  newPdf.save()
-    .then(() => res.json('PDF uploaded!'))
-    .catch(err => res.status(400).json('Error: ' + err));
+    const newPdf = new Pdf({ 
+      filename, 
+      filepath, 
+      uploaderId,
+      originalName: req.file.originalname,
+      fileSize: req.file.size,
+      uploadDate: new Date()
+    });
+
+    await newPdf.save();
+    
+    res.json({ 
+      success: true, 
+      message: 'PDF uploaded successfully!',
+      pdf: {
+        id: newPdf._id,
+        filename: newPdf.filename,
+        originalName: newPdf.originalName
+      }
+    });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error uploading PDF: ' + err.message 
+    });
+  }
 });
 
 router.get('/', (req, res) => {

@@ -18,8 +18,21 @@ const pdfSchema = new Schema({
   },
   uploaderId: {
     type: String,
-    required: true,
+    required: false,
+    default: 'anonymous'
   },
+  originalName: {
+    type: String,
+    required: false
+  },
+  fileSize: {
+    type: Number,
+    required: false
+  },
+  uploadDate: {
+    type: Date,
+    default: Date.now
+  }
 }, {
   timestamps: true,
 });
