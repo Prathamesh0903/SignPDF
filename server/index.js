@@ -57,34 +57,42 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB connection with proper SSL configuration
-const uri = process.env.ATLAS_URI;
-if (uri) {
-  mongoose.connect(uri, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true,
-    ssl: true,
-    sslValidate: false, // Disable SSL validation for development
-    retryWrites: true,
-    w: 'majority',
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  });
-  
-  const connection = mongoose.connection;
-  connection.once('open', () => {
+const connectDB = async () => {
+  const uri = process.env.ATLAS_URI;
+  if (!uri) {
+    console.error('MongoDB URI not provided in environment variables');
+    return;
+  }
+
+  try {
+    await mongoose.connect(uri, { 
+      useNewUrlParser: true, 
+      useUnifiedTopology: true,
+      retryWrites: true,
+      w: 'majority',
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      // SSL is automatically handled by MongoDB Atlas connection strings
+    });
+    
     console.log('MongoDB database connection established successfully');
-  });
-  
-  connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err);
-  });
-  
-  connection.on('disconnected', () => {
-    console.log('MongoDB disconnected');
-  });
-} else {
-  console.error('MongoDB URI not provided in environment variables');
-}
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    // Don't exit the process, let it continue without database
+  }
+};
+
+// Set up connection event listeners
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
+
+// Connect to database
+connectDB();
 
 const pdfsRouter = require('./routes/pdf');
 const authRouter = require('./routes/auth');
@@ -97,11 +105,13 @@ app.use('/uploads', express.static('uploads'));
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.status(200).json({ 
     status: 'OK', 
     message: 'Server is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    database: dbStatus
   });
 });
 
@@ -114,7 +124,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port: ${port}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Start server only after attempting database connection
+const startServer = async () => {
+  try {
+    await connectDB();
+    
+    app.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Database status: ${mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
