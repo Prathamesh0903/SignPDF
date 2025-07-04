@@ -1,20 +1,5 @@
 {
-  "name": "signpdflite",
-  "version": "1.0.0",
-  "description": "PDF signing application with React frontend and Node.js backend",
-  "scripts": {
-    "build": "cd client && npm install && npm run build",
-    "dev": "cd client && npm run dev",
-    "start": "cd server && npm start",
-    "install-client": "cd client && npm install",
-    "install-server": "cd server && npm install",
-    "install-all": "npm run install-client && npm run install-server"
-  },
-  "keywords": ["pdf", "signing", "react", "nodejs", "firebase"],
-  "author": "Prathamesh0903",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+  "dependencies": {
+    "bootstrap": "^5.3.6"
   }
 }
