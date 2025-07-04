@@ -108,9 +108,33 @@ VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 1. Go to [MongoDB Atlas](https://www.mongodb.com/atlas)
 2. Create a free cluster
 3. Set up database access (username/password)
-4. Set up network access (allow all IPs: 0.0.0.0/0)
+4. **IMPORTANT**: Set up network access (see Step 2)
 
-### Step 2: Get Connection String
+### Step 2: Configure Network Access (CRITICAL)
+
+**This is the most important step to fix the connection error:**
+
+1. In MongoDB Atlas, go to **Network Access** in the left sidebar
+2. Click **"ADD IP ADDRESS"**
+3. You have two options:
+
+   **Option A: Allow All IPs (Recommended for deployment)**
+   - Click **"ALLOW ACCESS FROM ANYWHERE"**
+   - This adds `0.0.0.0/0` to your IP whitelist
+   - This allows connections from any IP address (including Render's servers)
+
+   **Option B: Allow Specific IPs (For development only)**
+   - Click **"ADD CURRENT IP ADDRESS"** for your local development
+   - For Render deployment, you'll need to add Render's IP ranges
+
+4. Click **"Confirm"**
+
+**Why this is needed:**
+- Render's servers have dynamic IP addresses
+- MongoDB Atlas blocks connections from non-whitelisted IPs
+- Using `0.0.0.0/0` allows connections from anywhere (suitable for web applications)
+
+### Step 3: Get Connection String
 
 1. Click "Connect" on your cluster
 2. Choose "Connect your application"
@@ -136,7 +160,8 @@ Should return:
   "status": "OK",
   "message": "Server is running",
   "timestamp": "2024-01-01T00:00:00.000Z",
-  "environment": "production"
+  "environment": "production",
+  "database": "connected"
 }
 ```
 
@@ -156,6 +181,27 @@ Should return:
 3. **Build Failures**: Check the build logs in Vercel/Render dashboard
 4. **Database Connection**: Verify MongoDB Atlas connection string and network access
 
+### MongoDB Connection Errors
+
+**Error: "Could not connect to any servers in your MongoDB Atlas cluster"**
+
+**Solution:**
+1. **Check Network Access**: Go to MongoDB Atlas → Network Access
+2. **Add IP Address**: Click "ADD IP ADDRESS" → "ALLOW ACCESS FROM ANYWHERE"
+3. **Verify Connection String**: Ensure it includes `?retryWrites=true&w=majority`
+4. **Check Environment Variables**: Verify `ATLAS_URI` is set correctly in Render
+5. **Wait for Changes**: Network access changes can take a few minutes to propagate
+
+**Step-by-step fix:**
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
+2. Select your project
+3. Click **"Network Access"** in the left sidebar
+4. Click **"ADD IP ADDRESS"**
+5. Click **"ALLOW ACCESS FROM ANYWHERE"** (adds `0.0.0.0/0`)
+6. Click **"Confirm"**
+7. Wait 2-3 minutes for changes to take effect
+8. Redeploy your Render service
+
 ### SSL/TLS Errors
 
 If you encounter SSL errors like `tlsv1 alert internal error`:
@@ -164,7 +210,7 @@ If you encounter SSL errors like `tlsv1 alert internal error`:
 2. **Network Access**: Make sure MongoDB Atlas allows connections from all IPs (0.0.0.0/0)
 3. **Connection String Format**: Use the format: `mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority`
 4. **Environment Variables**: Verify `ATLAS_URI` is set correctly in Render
-5. **SSL Configuration**: The server is configured to handle SSL properly with `sslValidate: false`
+5. **SSL Configuration**: The server is configured to handle SSL properly
 
 ### Logs
 
@@ -177,6 +223,7 @@ If you encounter SSL errors like `tlsv1 alert internal error`:
 2. Use environment variables for all sensitive data
 3. Keep your Firebase and MongoDB credentials secure
 4. Regularly rotate your API keys and passwords
+5. **Note**: Using `0.0.0.0/0` for MongoDB Atlas is common for web applications but consider more restrictive settings for production
 
 ## Support
 
@@ -185,4 +232,5 @@ If you encounter issues:
 2. Verify all environment variables are set
 3. Test the API endpoints individually
 4. Check the browser console for frontend errors
-5. For SSL errors, verify MongoDB Atlas network access and connection string format 
+5. For SSL errors, verify MongoDB Atlas network access and connection string format
+6. **For connection errors**: Always check MongoDB Atlas Network Access settings first 
