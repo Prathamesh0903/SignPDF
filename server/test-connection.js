@@ -28,7 +28,6 @@ async function testConnection() {
         tls: true,
         tlsAllowInvalidCertificates: false,
         tlsAllowInvalidHostnames: false,
-        tlsInsecure: false,
         maxPoolSize: 10,
         minPoolSize: 1,
         maxIdleTimeMS: 30000,

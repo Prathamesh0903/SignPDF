@@ -68,7 +68,19 @@ const connectDB = async () => {
   }
 
   const connectionOptions = [
-    // Primary configuration with TLS
+    // Primary configuration - simple and reliable
+    {
+      useNewUrlParser: true, 
+      useUnifiedTopology: true,
+      retryWrites: true,
+      w: 'majority',
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000,
+    },
+    // Fallback configuration with TLS
     {
       useNewUrlParser: true, 
       useUnifiedTopology: true,
@@ -79,21 +91,6 @@ const connectDB = async () => {
       tls: true,
       tlsAllowInvalidCertificates: false,
       tlsAllowInvalidHostnames: false,
-      tlsInsecure: false,
-      maxPoolSize: 10,
-      minPoolSize: 1,
-      maxIdleTimeMS: 30000,
-      bufferCommands: false,
-      bufferMaxEntries: 0,
-    },
-    // Fallback configuration without TLS
-    {
-      useNewUrlParser: true, 
-      useUnifiedTopology: true,
-      retryWrites: true,
-      w: 'majority',
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
       maxPoolSize: 10,
       minPoolSize: 1,
       maxIdleTimeMS: 30000,
