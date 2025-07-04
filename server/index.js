@@ -3,6 +3,9 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+// Configure Node.js TLS for MongoDB Atlas
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin with environment variables for production
@@ -64,21 +67,52 @@ const connectDB = async () => {
     return;
   }
 
-  try {
-    await mongoose.connect(uri, { 
+  const connectionOptions = [
+    // Primary configuration with TLS
+    {
       useNewUrlParser: true, 
       useUnifiedTopology: true,
       retryWrites: true,
       w: 'majority',
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
-      // SSL is automatically handled by MongoDB Atlas connection strings
-    });
-    
-    console.log('MongoDB database connection established successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    // Don't exit the process, let it continue without database
+      tls: true,
+      tlsAllowInvalidCertificates: false,
+      tlsAllowInvalidHostnames: false,
+      tlsInsecure: false,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000,
+      bufferCommands: false,
+      bufferMaxEntries: 0,
+    },
+    // Fallback configuration without TLS
+    {
+      useNewUrlParser: true, 
+      useUnifiedTopology: true,
+      retryWrites: true,
+      w: 'majority',
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000,
+    }
+  ];
+
+  for (let i = 0; i < connectionOptions.length; i++) {
+    try {
+      console.log(`Attempting MongoDB connection with configuration ${i + 1}...`);
+      await mongoose.connect(uri, connectionOptions[i]);
+      console.log('MongoDB database connection established successfully');
+      return; // Success, exit the function
+    } catch (error) {
+      console.error(`MongoDB connection attempt ${i + 1} failed:`, error.message);
+      if (i === connectionOptions.length - 1) {
+        console.error('All MongoDB connection attempts failed');
+        // Don't exit the process, let it continue without database
+      }
+    }
   }
 };
 
