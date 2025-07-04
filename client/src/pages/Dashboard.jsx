@@ -1,133 +1,112 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-import SignaturePlaceholder from '../components/SignaturePlaceholder';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+import { API_ENDPOINTS } from '../config/api';
 
 function Dashboard() {
   const [pdfs, setPdfs] = useState([]);
-  const [signatures, setSignatures] = useState({});
-  const [loadingPdf, setLoadingPdf] = useState({});
-  const [pdfLoadError, setPdfLoadError] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/pdfs')
-      .then(res => setPdfs(res.data))
-      .catch(err => console.log(err));
+    fetchPdfs();
   }, []);
 
-  useEffect(() => {
-    pdfs.forEach(pdf => {
-      axios.get(`http://localhost:5000/signatures/${pdf._id}`)
-        .then(res => {
-          setSignatures(prevSignatures => ({
-            ...prevSignatures,
-            [pdf._id]: res.data,
-          }));
+  const fetchPdfs = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.GET_PDFS);
+      const pdfsWithSignatures = await Promise.all(
+        response.data.map(async (pdf) => {
+          try {
+            const signatureResponse = await axios.get(API_ENDPOINTS.GET_SIGNATURES(pdf._id));
+            return { ...pdf, signatures: signatureResponse.data };
+          } catch (err) {
+            return { ...pdf, signatures: [] };
+          }
         })
-        .catch(err => console.log(err));
-    });
-  }, [pdfs]);
-
-  const onDocumentLoadSuccess = (pdfId) => () => {
-    setLoadingPdf(prev => ({ ...prev, [pdfId]: false }));
-    setPdfLoadError(prev => ({ ...prev, [pdfId]: false }));
+      );
+      setPdfs(pdfsWithSignatures);
+    } catch (err) {
+      setError('Failed to fetch PDFs');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const onDocumentLoadError = (pdfId) => (error) => { 
-    console.error('Error loading PDF:', error);
-    setLoadingPdf(prev => ({ ...prev, [pdfId]: false }));
-    setPdfLoadError(prev => ({ ...prev, [pdfId]: true }));
-  };
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-      <h2 style={{ color: 'var(--color-primary)', marginBottom: '2rem', textAlign: 'center', fontWeight: 700, fontSize: '2rem' }}>Your Uploaded PDFs</h2>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '2rem',
-        marginBottom: '3rem',
-      }}>
-        {pdfs.map(pdf => (
-          <div key={pdf._id} className="card" style={{
-            borderRadius: 'var(--border-radius)',
-            boxShadow: '0 4px 24px 0 rgba(31, 38, 135, 0.10)',
-            padding: '1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            transition: 'transform 0.15s',
-            background: 'var(--color-surface)',
-            position: 'relative',
-            minHeight: 120,
-            justifyContent: 'center',
-          }}>
-            <h3 style={{
-              color: 'var(--color-text)',
-              fontWeight: 600,
-              fontSize: '1.1rem',
-              marginBottom: '1.5rem',
-              textAlign: 'center',
-              maxWidth: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              width: '100%',
-            }} title={pdf.filename}>{pdf.filename}</h3>
-            <a
-              href={`http://localhost:5000/${pdf.filepath}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                background: 'var(--color-primary)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 'var(--border-radius)',
-                padding: '0.5rem 1.2rem',
-                fontWeight: 600,
-                fontSize: '1rem',
-                textDecoration: 'none',
-                marginTop: '0.5rem',
-                boxShadow: '0 2px 8px rgba(79,70,229,0.08)',
-                transition: 'background var(--transition), box-shadow var(--transition)',
-                display: 'inline-block',
-              }}
-            >
-              View PDF
-            </a>
-          </div>
-        ))}
-      </div>
-      {/* Floating Upload Button */}
-      <button
-        style={{
-          position: 'fixed',
-          bottom: '2.5rem',
-          right: '2.5rem',
-          background: 'var(--color-accent)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '50%',
-          width: 60,
-          height: 60,
-          fontSize: '2rem',
-          boxShadow: '0 4px 24px 0 rgba(31, 38, 135, 0.18)',
-          cursor: 'pointer',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'background var(--transition), box-shadow var(--transition)',
-        }}
-        title="Upload PDF"
-        onClick={() => window.location.href = '/upload'}
-      >
-        +
-      </button>
+    <div className="container" style={{ minHeight: '90vh', padding: '2rem 0', background: 'linear-gradient(120deg, #e0e7ff 0%, #f8fafc 100%)' }}>
+      <h1 style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: '2.5rem', marginBottom: '2rem', textAlign: 'center' }}>Dashboard</h1>
+      
+      {pdfs.length === 0 ? (
+        <div style={{ textAlign: 'center', color: 'var(--color-muted)', fontSize: '1.2rem' }}>
+          No PDFs uploaded yet. <a href="/upload" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>Upload your first PDF</a>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: '2rem',
+          width: '100%',
+        }}>
+          {pdfs.map((pdf) => (
+            <div key={pdf._id} className="card" style={{
+              borderRadius: 'var(--border-radius)',
+              boxShadow: '0 4px 24px 0 rgba(31, 38, 135, 0.10)',
+              padding: '1.5rem',
+              background: 'var(--color-surface)',
+              transition: 'transform 0.15s',
+            }}>
+              <h3 style={{ color: 'var(--color-text)', fontWeight: 700, fontSize: '1.2rem', marginBottom: 10 }}>{pdf.filename}</h3>
+              <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem', marginBottom: 15 }}>
+                Uploaded: {new Date(pdf.uploadDate).toLocaleDateString()}
+              </p>
+              
+              <div style={{ marginBottom: 15 }}>
+                <strong>Signatures:</strong> {pdf.signatures?.length || 0}
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <a
+                  href={API_ENDPOINTS.FILE_PATH(pdf.filepath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: 'var(--color-primary)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 'var(--border-radius)',
+                    padding: '0.5rem 1rem',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(79,70,229,0.08)',
+                  }}
+                >
+                  View PDF
+                </a>
+                <a
+                  href="/sign-pdf"
+                  style={{
+                    background: 'var(--color-accent)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 'var(--border-radius)',
+                    padding: '0.5rem 1rem',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(245,158,66,0.08)',
+                  }}
+                >
+                  Sign PDF
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

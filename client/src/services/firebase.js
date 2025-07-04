@@ -9,13 +9,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth"; //
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAvmlhgXfzsvGepjAnTg1IrOXbm6p7VDeE",
-  authDomain: "signpdf-f4ff2.firebaseapp.com",
-  projectId: "signpdf-f4ff2",
-  storageBucket: "signpdf-f4ff2.firebasestorage.app",
-  messagingSenderId: "154704879141",
-  appId: "1:154704879141:web:92c36ec6063ca77c17a9cc",
-  measurementId: "G-ZJK2193BG5"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAvmlhgXfzsvGepjAnTg1IrOXbm6p7VDeE",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "signpdf-f4ff2.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "signpdf-f4ff2",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "signpdf-f4ff2.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "154704879141",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:154704879141:web:92c36ec6063ca77c17a9cc",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-ZJK2193BG5"
 };
 
 // Initialize Firebase
