@@ -8,8 +8,8 @@ This guide will help you set up environment variables in Vercel for your SignPDF
 2. Click **"New Project"**
 3. Import your GitHub repository (`https://github.com/Prathamesh0903/SignPDF.git`)
 4. **IMPORTANT**: Configure the project settings correctly:
-   - **Framework Preset**: `Vite`
-   - **Root Directory**: `./client` ⚠️ **Leave this empty (don't set it)**
+   - **Framework Preset**: `Vite` (or leave as "Other")
+   - **Root Directory**: Leave empty (don't set it)
    - **Build Command**: `cd client && npm install && npm run build`
    - **Output Directory**: `client/dist`
    - **Install Command**: Leave empty (will use default)
@@ -102,6 +102,7 @@ After setting all environment variables:
      - Make sure you're NOT setting Root Directory in Vercel
      - The build should run from the project root
      - Check that all dependencies are properly listed in `client/package.json`
+     - Try redeploying after the recent dependency updates
 
 2. **"Environment Variable references Secret which does not exist"**
    - **Solution**: Remove environment variables from `vercel.json` and set them directly in the Vercel dashboard
