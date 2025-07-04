@@ -7,12 +7,12 @@ This guide will help you set up environment variables in Vercel for your SignPDF
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Click **"New Project"**
 3. Import your GitHub repository (`https://github.com/Prathamesh0903/SignPDF.git`)
-4. Configure the project settings:
+4. **IMPORTANT**: Configure the project settings correctly:
    - **Framework Preset**: `Vite`
-   - **Root Directory**: `./client`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
+   - **Root Directory**: `./client` ⚠️ **Leave this empty (don't set it)**
+   - **Build Command**: `cd client && npm install && npm run build`
+   - **Output Directory**: `client/dist`
+   - **Install Command**: Leave empty (will use default)
 
 ## Step 2: Set Environment Variables
 
@@ -97,23 +97,46 @@ After setting all environment variables:
 
 ### Common Issues:
 
-1. **"Environment Variable references Secret which does not exist"**
+1. **"Command cd client && npm install && npm run build exited with 1"**
+   - **Solution**: 
+     - Make sure you're NOT setting Root Directory in Vercel
+     - The build should run from the project root
+     - Check that all dependencies are properly listed in `client/package.json`
+
+2. **"Environment Variable references Secret which does not exist"**
    - **Solution**: Remove environment variables from `vercel.json` and set them directly in the Vercel dashboard
 
-2. **Build fails with "Cannot find module"**
-   - **Solution**: Make sure you're in the correct root directory (`./client`)
+3. **Build fails with "Cannot find module"**
+   - **Solution**: 
+     - Make sure you're NOT setting Root Directory in Vercel
+     - The build command should be `cd client && npm install && npm run build`
+     - Check that all dependencies are installed
 
-3. **Environment variables not working**
+4. **Environment variables not working**
    - **Solution**: 
      - Check that all variables start with `VITE_`
      - Redeploy after adding variables
      - Verify variable names match exactly
 
-4. **API calls failing**
+5. **API calls failing**
    - **Solution**: 
      - Verify `VITE_API_BASE_URL` is correct
      - Check that your backend is running on Render
      - Ensure CORS is configured properly
+
+### Build Error Debugging:
+
+If you get build errors:
+
+1. **Check the build logs** in Vercel dashboard
+2. **Verify Node.js version** (should be 18+)
+3. **Check dependencies** in `client/package.json`
+4. **Try building locally**:
+   ```bash
+   cd client
+   npm install
+   npm run build
+   ```
 
 ### Environment Variable Checklist:
 
