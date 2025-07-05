@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../config/api';
+import { Link } from 'react-router-dom';
 
 function Dashboard() {
   const [pdfs, setPdfs] = useState([]);
@@ -86,8 +87,9 @@ function Dashboard() {
                 >
                   View PDF
                 </a>
-                <a
-                  href="/sign-pdf"
+                <Link
+                  to="/sign-pdf"
+                  state={{ selectedPdfId: pdf._id }}
                   style={{
                     background: 'var(--color-accent)',
                     color: '#fff',
@@ -98,10 +100,11 @@ function Dashboard() {
                     fontSize: '0.9rem',
                     textDecoration: 'none',
                     boxShadow: '0 2px 8px rgba(245,158,66,0.08)',
+                    display: 'inline-block',
                   }}
                 >
                   Sign PDF
-                </a>
+                </Link>
               </div>
             </div>
           ))}

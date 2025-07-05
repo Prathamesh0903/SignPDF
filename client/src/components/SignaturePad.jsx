@@ -3,6 +3,7 @@ import { DndContext, useDraggable } from '@dnd-kit/core';
 import axios from 'axios';
 import { auth } from '../services/firebase';
 import { API_ENDPOINTS } from '../config/api';
+import { useLocation } from 'react-router-dom';
 
 const DraggableSignature = ({ signatureData, position, isFixed }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -28,6 +29,7 @@ const DraggableSignature = ({ signatureData, position, isFixed }) => {
 };
 
 function SignaturePad() {
+  const location = useLocation();
   const [pdfs, setPdfs] = useState([]);
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [signaturePosition, setSignaturePosition] = useState({ x: 50, y: 50 });
@@ -42,9 +44,20 @@ function SignaturePad() {
 
   useEffect(() => {
     axios.get(API_ENDPOINTS.GET_PDFS)
-      .then(res => setPdfs(res.data))
+      .then(res => {
+        setPdfs(res.data);
+        
+        // Auto-select PDF if passed from dashboard
+        if (location.state?.selectedPdfId) {
+          const pdfToSelect = res.data.find(pdf => pdf._id === location.state.selectedPdfId);
+          if (pdfToSelect) {
+            setSelectedPdf(pdfToSelect);
+            setMessage('PDF loaded from dashboard. You can now generate your signature.');
+          }
+        }
+      })
       .catch(err => console.log(err));
-  }, []);
+  }, [location.state?.selectedPdfId]);
 
   const handleDragEnd = (event) => {
     const { delta } = event;
@@ -209,7 +222,28 @@ function SignaturePad() {
               </button>
             </div>
           </div>
-          {message && <div style={{ background: finalizedPdfUrl ? 'var(--color-accent)' : 'var(--color-primary)', color: '#fff', borderRadius: 'var(--border-radius)', padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 500, marginTop: '1rem', boxShadow: '0 2px 8px rgba(245,158,66,0.08)', marginBottom: '1.5rem' }}>{message}</div>}
+          {message && (
+            <div style={{ 
+              background: finalizedPdfUrl ? 'var(--color-accent)' : 'var(--color-primary)', 
+              color: '#fff', 
+              borderRadius: 'var(--border-radius)', 
+              padding: '0.75rem 1rem', 
+              textAlign: 'center', 
+              fontWeight: 500, 
+              marginTop: '1rem', 
+              boxShadow: '0 2px 8px rgba(245,158,66,0.08)', 
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem'
+            }}>
+              {location.state?.selectedPdfId && selectedPdf && (
+                <span style={{ fontSize: '1.2rem' }}>📄</span>
+              )}
+              {message}
+            </div>
+          )}
           {/* Step 2: PDF Preview and Signature Drag */}
           {selectedPdf && (
             <div style={{ margin: '2rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
