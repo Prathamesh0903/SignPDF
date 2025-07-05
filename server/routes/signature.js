@@ -83,19 +83,35 @@ router.post('/finalize-and-embed', async (req, res) => {
 
     // Validate signature image
     if (!signatureImage || !signatureImage.includes('data:image/png;base64,')) {
+      console.error('Invalid signature image format:', signatureImage ? signatureImage.substring(0, 50) + '...' : 'null');
       return res.status(400).json({ message: 'Invalid signature image format' });
     }
 
-    const pngImageBytes = Buffer.from(signatureImage.split(',')[1], 'base64');
-    const pngImage = await pdfDoc.embedPng(pngImageBytes);
+    let pngImage;
+    try {
+      const pngImageBytes = Buffer.from(signatureImage.split(',')[1], 'base64');
+      pngImage = await pdfDoc.embedPng(pngImageBytes);
+      console.log('Signature image embedded successfully');
+    } catch (imageError) {
+      console.error('Error embedding signature image:', imageError);
+      return res.status(400).json({ message: 'Error processing signature image' });
+    }
 
     const { width, height } = targetPage.getSize();
+
+    // Validate coordinate values
+    if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) {
+      console.error('Invalid coordinates:', { x, y });
+      return res.status(400).json({ message: 'Invalid signature coordinates' });
+    }
 
     const scaleX = width / (renderedPdfWidth || 600);
     const scaleY = height / (renderedPdfHeight || 800);
 
     const scaledX = x * scaleX;
     const scaledY = y * scaleY;
+
+    console.log('Scaling factors:', { scaleX, scaleY, originalCoords: { x, y }, scaledCoords: { scaledX, scaledY } });
 
     targetPage.drawImage(pngImage, {
       x: scaledX,
@@ -104,19 +120,29 @@ router.post('/finalize-and-embed', async (req, res) => {
       height: 56 * scaleY,
     });
 
+    console.log('Saving PDF document...');
     const signedPdfBytes = await pdfDoc.save();
+    console.log('PDF document saved, size:', signedPdfBytes.length, 'bytes');
+    
     const newFilename = `${Date.now()}-${pdf.filename.replace('.pdf', '_signed.pdf')}`;
     const newFilePath = `uploads/${newFilename}`;
+    console.log('New file path:', newFilePath);
 
     // Ensure uploads directory exists
     try {
       await fs.mkdir('uploads', { recursive: true });
+      console.log('Uploads directory ensured');
     } catch (dirError) {
       console.error('Error creating uploads directory:', dirError);
     }
 
-    await fs.writeFile(newFilePath, signedPdfBytes);
-    console.log('Signed PDF saved:', newFilePath);
+    try {
+      await fs.writeFile(newFilePath, signedPdfBytes);
+      console.log('Signed PDF saved successfully:', newFilePath);
+    } catch (writeError) {
+      console.error('Error writing signed PDF:', writeError);
+      return res.status(500).json({ message: 'Error saving signed PDF file' });
+    }
 
     res.json({ 
       message: 'PDF signed and saved!', 
@@ -125,9 +151,12 @@ router.post('/finalize-and-embed', async (req, res) => {
 
   } catch (err) {
     console.error('Error finalizing PDF:', err);
+    console.error('Error stack:', err.stack);
+    console.error('Request body:', req.body);
     res.status(500).json({ 
       message: 'Error finalizing PDF',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 });

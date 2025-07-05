@@ -105,7 +105,16 @@ function SignaturePad() {
     setFinalizing(true);
     setMessage('Finalizing and generating signed PDF...');
     try {
-      const idToken = await auth.currentUser.getIdToken();
+      console.log('Sending finalize request with data:', {
+        documentId: selectedPdf._id,
+        x: signaturePosition.x,
+        y: signaturePosition.y + 280,
+        page: 1,
+        renderedPdfWidth: 600,
+        renderedPdfHeight: 800,
+        signatureImageLength: signatureData ? signatureData.length : 0
+      });
+
       const response = await axios.post(API_ENDPOINTS.FINALIZE_AND_EMBED, {
         documentId: selectedPdf._id,
         signatureImage: signatureData,
@@ -114,9 +123,9 @@ function SignaturePad() {
         page: 1, // Assuming page 1 for now
         renderedPdfWidth: 600, // Fixed width of the PDF container
         renderedPdfHeight: 800, // Fixed height of the PDF container,
-      }, {
-        headers: { Authorization: `Bearer ${idToken}` },
       });
+
+      console.log('Finalize response:', response.data);
 
       if (response.data && response.data.newFilePath) {
         setFinalizedPdfUrl(`${import.meta.env.VITE_API_BASE_URL}${response.data.newFilePath}`);
@@ -126,6 +135,8 @@ function SignaturePad() {
         throw new Error(response.data.message || 'Failed to finalize PDF.');
       }
     } catch (err) {
+      console.error('Finalize error:', err);
+      console.error('Error response:', err.response?.data);
       setMessage(`Error: ${err.response?.data?.message || err.message}`);
     }
     setFinalizing(false);
