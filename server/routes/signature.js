@@ -19,6 +19,20 @@ router.get('/:documentId', (req, res) => {
     .catch(err => res.status(400).json('Error: ' + err));
 });
 
+// Debug route to check file existence
+router.get('/debug/files', async (req, res) => {
+  try {
+    const files = await fs.readdir('uploads');
+    res.json({ 
+      files,
+      uploadsDir: 'uploads',
+      cwd: process.cwd()
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/finalize', async (req, res) => {
   const { documentId, signatureId } = req.body;
 
@@ -62,13 +76,58 @@ router.post('/finalize-and-embed', async (req, res) => {
     }
 
     console.log('PDF found:', pdf.filename, 'Path:', pdf.filepath);
+    console.log('Current working directory:', process.cwd());
+    console.log('Full file path:', require('path').resolve(pdf.filepath));
+    
+    // List files in uploads directory for debugging
+    try {
+      const uploadsDir = await fs.readdir('uploads');
+      console.log('Files in uploads directory:', uploadsDir);
+    } catch (dirError) {
+      console.error('Error reading uploads directory:', dirError);
+    }
 
     // Check if file exists
     try {
       await fs.access(pdf.filepath);
+      console.log('File exists and is accessible');
     } catch (fileError) {
       console.error('PDF file not accessible:', pdf.filepath, fileError);
-      return res.status(404).json({ message: 'PDF file not found on server' });
+      
+      // Try alternative paths
+      const alternativePaths = [
+        `./${pdf.filepath}`,
+        `../${pdf.filepath}`,
+        `uploads/${pdf.filename}`,
+        `./uploads/${pdf.filename}`
+      ];
+      
+      for (const altPath of alternativePaths) {
+        try {
+          await fs.access(altPath);
+          console.log('Found file at alternative path:', altPath);
+          // Update the filepath in the database
+          pdf.filepath = altPath;
+          await pdf.save();
+          break;
+        } catch (altError) {
+          console.log('Alternative path not found:', altPath);
+        }
+      }
+      
+      // Try one more time with the updated path
+      try {
+        await fs.access(pdf.filepath);
+        console.log('File now accessible after path correction');
+      } catch (finalError) {
+        console.error('File still not accessible after path correction');
+        return res.status(404).json({ 
+          message: 'PDF file not found on server',
+          storedPath: pdf.filepath,
+          filename: pdf.filename,
+          error: fileError.message
+        });
+      }
     }
 
     const existingPdfBytes = await fs.readFile(pdf.filepath);
