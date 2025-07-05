@@ -140,11 +140,11 @@ const pdfsRouter = require('./routes/pdf');
 const authRouter = require('./routes/auth');
 const signatureRouter = require('./routes/signature');
 
-// API routes with /api prefix
-app.use('/api/pdfs', pdfsRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/signatures', signatureRouter);
-app.use('/api/uploads', express.static('uploads'));
+// API routes without /api prefix
+app.use('/pdfs', pdfsRouter);
+app.use('/auth', authRouter);
+app.use('/signatures', signatureRouter);
+app.use('/uploads', express.static('uploads'));
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
