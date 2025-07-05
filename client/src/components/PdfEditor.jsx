@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 
 function PdfEditor() {
   const [pdfs, setPdfs] = useState([]);
@@ -11,14 +12,14 @@ function PdfEditor() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/pdfs')
+    axios.get(API_ENDPOINTS.GET_PDFS)
       .then(res => setPdfs(res.data))
       .catch(err => console.log(err));
   }, []);
 
   const handleAddText = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/pdfs/add-text', {
+      const res = await axios.post(API_ENDPOINTS.ADD_TEXT, {
         filepath: selectedPdf,
         pageNumber,
         text,

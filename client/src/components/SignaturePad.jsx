@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DndContext, useDraggable } from '@dnd-kit/core';
 import axios from 'axios';
 import { auth } from '../services/firebase';
+import { API_ENDPOINTS } from '../config/api';
 
 const DraggableSignature = ({ signatureData, position, isFixed }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -40,7 +41,7 @@ function SignaturePad() {
   const pdfContainerRef = useRef(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/pdfs')
+    axios.get(API_ENDPOINTS.GET_PDFS)
       .then(res => setPdfs(res.data))
       .catch(err => console.log(err));
   }, []);
@@ -92,7 +93,7 @@ function SignaturePad() {
     setMessage('Finalizing and generating signed PDF...');
     try {
       const idToken = await auth.currentUser.getIdToken();
-      const response = await axios.post('http://localhost:5000/signatures/finalize-and-embed', {
+      const response = await axios.post(API_ENDPOINTS.FINALIZE_AND_EMBED, {
         documentId: selectedPdf._id,
         signatureImage: signatureData,
         x: signaturePosition.x,
@@ -105,7 +106,7 @@ function SignaturePad() {
       });
 
       if (response.data && response.data.newFilePath) {
-        setFinalizedPdfUrl(`http://localhost:5000${response.data.newFilePath}`);
+        setFinalizedPdfUrl(`${import.meta.env.VITE_API_BASE_URL}${response.data.newFilePath}`);
         setMessage('PDF signed successfully! You can now download your document.');
         setIsSignatureFixed(true); // Fix signature position after successful finalization
       } else {
@@ -217,7 +218,7 @@ function SignaturePad() {
                 style={{ position: 'relative', width: 600, height: 800, border: '2px solid var(--color-muted)', borderRadius: 'var(--border-radius)', overflow: 'hidden', boxShadow: '0 4px 24px 0 rgba(31, 38, 135, 0.10)', background: '#fff' }}
               >
                 <iframe
-                  src={`http://localhost:5000/uploads/${encodeURIComponent(selectedPdf.filename)}`}
+                  src={`${API_ENDPOINTS.UPLOADS}/${encodeURIComponent(selectedPdf.filename)}`}
                   title="PDF Preview"
                   width="100%"
                   height="100%"

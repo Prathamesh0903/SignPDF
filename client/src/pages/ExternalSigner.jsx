@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { DndContext, useDraggable } from '@dnd-kit/core';
+import { API_ENDPOINTS } from '../config/api';
 
 const DraggableSignature = ({ signatureData, position }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: 'signature' });
@@ -46,7 +47,7 @@ function ExternalSigner() {
     const token = queryParams.get('token');
 
     if (token) {
-      axios.get(`http://localhost:5000/share/validate-link?token=${token}`)
+      axios.get(API_ENDPOINTS.VALIDATE_LINK(token))
         .then(res => {
           if (res.data.valid) {
             setDocumentId(res.data.documentId);
@@ -66,7 +67,7 @@ function ExternalSigner() {
 
   useEffect(() => {
     if (documentId) {
-      axios.get(`http://localhost:5000/pdfs/${documentId}`)
+      axios.get(API_ENDPOINTS.GET_PDF(documentId))
         .then(res => setPdfDetails(res.data))
         .catch(err => console.log(err));
     }
@@ -120,7 +121,7 @@ function ExternalSigner() {
       // You'll need a way to identify them, e.g., from the JWT or a temporary ID.
       const userId = 'external_signer'; 
 
-      const response = await axios.post('http://localhost:5000/signatures/finalize-and-embed', {
+      const response = await axios.post(API_ENDPOINTS.FINALIZE_AND_EMBED, {
         documentId: pdfDetails._id,
         signatureImage: signatureData,
         x: signaturePosition.x,
@@ -130,7 +131,7 @@ function ExternalSigner() {
 
       if (response.data && response.data.newFilePath) {
         setMessage('PDF signed successfully! You can now download your document.');
-        window.open(`http://localhost:5000${response.data.newFilePath}`, '_blank');
+        window.open(`${import.meta.env.VITE_API_BASE_URL}${response.data.newFilePath}`, '_blank');
       } else {
         throw new Error(response.data.message || 'Failed to finalize PDF.');
       }
@@ -173,7 +174,7 @@ function ExternalSigner() {
               style={{ position: 'relative', width: '600px', height: '800px', border: '1px solid #ddd' }}
             >
               <iframe
-                src={`http://localhost:5000/${pdfDetails.filepath}`}
+                src={`${API_ENDPOINTS.FILE_PATH(pdfDetails.filepath)}`}
                 title="PDF Preview"
                 width="100%"
                 height="100%"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 
 function FinalizeSignature() {
   const [pdfs, setPdfs] = useState([]);
@@ -9,14 +10,14 @@ function FinalizeSignature() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/pdfs')
+    axios.get(API_ENDPOINTS.GET_PDFS)
       .then(res => setPdfs(res.data))
       .catch(err => console.log(err));
   }, []);
 
   useEffect(() => {
     if (selectedPdf) {
-      axios.get(`http://localhost:5000/signatures/${selectedPdf}`)
+      axios.get(API_ENDPOINTS.GET_SIGNATURES(selectedPdf))
         .then(res => setSignatures(res.data))
         .catch(err => console.log(err));
     }
@@ -24,7 +25,7 @@ function FinalizeSignature() {
 
   const handleFinalize = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/signatures/finalize', {
+      const res = await axios.post(API_ENDPOINTS.FINALIZE_SIGNATURE, {
         documentId: selectedPdf,
         signatureId: selectedSignature,
       });
