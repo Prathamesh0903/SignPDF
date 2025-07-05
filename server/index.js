@@ -42,7 +42,10 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://signpdf-git-master-prathamesh-pawars-projects-de2689ea.vercel.app',
   'https://signpdf-prathamesh-pawars-projects-de2689ea.vercel.app',
-  'https://signpdf.vercel.app'
+  'https://signpdf.vercel.app',
+  // Add your current Vercel domain here
+  'https://signpdflite.vercel.app',
+  'https://signpdflite-git-main-prathamesh-pawars-projects-de2689ea.vercel.app'
 ];
 
 app.use(cors({
@@ -137,10 +140,11 @@ const pdfsRouter = require('./routes/pdf');
 const authRouter = require('./routes/auth');
 const signatureRouter = require('./routes/signature');
 
-app.use('/pdfs', pdfsRouter);
-app.use('/auth', authRouter);
-app.use('/signatures', signatureRouter);
-app.use('/uploads', express.static('uploads'));
+// API routes with /api prefix
+app.use('/api/pdfs', pdfsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/signatures', signatureRouter);
+app.use('/api/uploads', express.static('uploads'));
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
